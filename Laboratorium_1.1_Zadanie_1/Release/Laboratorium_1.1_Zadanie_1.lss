@@ -3,9 +3,9 @@ Laboratorium_1.1_Zadanie_1.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         0000009c  00000000  00000000  00000054  2**1
+  0 .text         00000096  00000000  00000000  00000054  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .comment      00000030  00000000  00000000  000000f0  2**0
+  1 .comment      00000030  00000000  00000000  000000ea  2**0
                   CONTENTS, READONLY
 
 Disassembly of section .text:
@@ -41,37 +41,34 @@ Disassembly of section .text:
   5c:	de bf       	out	0x3e, r29	; 62
   5e:	cd bf       	out	0x3d, r28	; 61
   60:	0e 94 36 00 	call	0x6c	; 0x6c <main>
-  64:	0c 94 4c 00 	jmp	0x98	; 0x98 <_exit>
+  64:	0c 94 49 00 	jmp	0x92	; 0x92 <_exit>
 
 00000068 <__bad_interrupt>:
   68:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
 
 0000006c <main>:
-  6c:	8f 9a       	sbi	0x11, 7	; 17
-  6e:	97 9a       	sbi	0x12, 7	; 18
-  70:	2f ef       	ldi	r18, 0xFF	; 255
-  72:	84 e3       	ldi	r24, 0x34	; 52
-  74:	9c e0       	ldi	r25, 0x0C	; 12
-  76:	21 50       	subi	r18, 0x01	; 1
-  78:	80 40       	sbci	r24, 0x00	; 0
-  7a:	90 40       	sbci	r25, 0x00	; 0
-  7c:	e1 f7       	brne	.-8      	; 0x76 <main+0xa>
-  7e:	00 c0       	rjmp	.+0      	; 0x80 <main+0x14>
-  80:	00 00       	nop
-  82:	97 98       	cbi	0x12, 7	; 18
-  84:	2f ef       	ldi	r18, 0xFF	; 255
-  86:	84 e3       	ldi	r24, 0x34	; 52
-  88:	9c e0       	ldi	r25, 0x0C	; 12
-  8a:	21 50       	subi	r18, 0x01	; 1
-  8c:	80 40       	sbci	r24, 0x00	; 0
-  8e:	90 40       	sbci	r25, 0x00	; 0
-  90:	e1 f7       	brne	.-8      	; 0x8a <main+0x1e>
-  92:	00 c0       	rjmp	.+0      	; 0x94 <main+0x28>
-  94:	00 00       	nop
-  96:	eb cf       	rjmp	.-42     	; 0x6e <main+0x2>
+  6c:	88 9a       	sbi	0x11, 0	; 17
+  6e:	89 9a       	sbi	0x11, 1	; 17
+  70:	8a 9a       	sbi	0x11, 2	; 17
+  72:	8b 9a       	sbi	0x11, 3	; 17
+  74:	8c 9a       	sbi	0x11, 4	; 17
+  76:	8d 9a       	sbi	0x11, 5	; 17
+  78:	8e 9a       	sbi	0x11, 6	; 17
+  7a:	8f 9a       	sbi	0x11, 7	; 17
+  7c:	90 9a       	sbi	0x12, 0	; 18
+  7e:	91 9a       	sbi	0x12, 1	; 18
+  80:	92 9a       	sbi	0x12, 2	; 18
+  82:	93 9a       	sbi	0x12, 3	; 18
+  84:	94 9a       	sbi	0x12, 4	; 18
+  86:	95 9a       	sbi	0x12, 5	; 18
+  88:	96 9a       	sbi	0x12, 6	; 18
+  8a:	97 9a       	sbi	0x12, 7	; 18
+  8c:	80 e0       	ldi	r24, 0x00	; 0
+  8e:	90 e0       	ldi	r25, 0x00	; 0
+  90:	08 95       	ret
 
-00000098 <_exit>:
-  98:	f8 94       	cli
+00000092 <_exit>:
+  92:	f8 94       	cli
 
-0000009a <__stop_program>:
-  9a:	ff cf       	rjmp	.-2      	; 0x9a <__stop_program>
+00000094 <__stop_program>:
+  94:	ff cf       	rjmp	.-2      	; 0x94 <__stop_program>
