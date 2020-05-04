@@ -1,6 +1,7 @@
 #include "SET.h"
 
 int main() {
+/*			I SPOSOB
 
 	sbi(DDRD, PD0); //Ustawia wyprowadzenie PD0 do pracy jako wyjscie
 	sbi(DDRD, PD1); //Ustawia wyprowadzenie PD1 do pracy jako wyjscie
@@ -20,6 +21,20 @@ int main() {
 	sbi(PORTD,PD5); //Ustawia stan wysoki na wyprowdzeniu PD5
 	sbi(PORTD,PD6); //Ustawia stan wysoki na wyprowdzeniu PD6
 	sbi(PORTD,PD7); //Ustawia stan wysoki na wyprowdzeniu PD7
+*/
+
+/* II SPOSOB
+DDRD = 0b11111111; //Ustawia wyprowadzenia od PD0 do PD7 do pracy jako wyjscie
+PORTD = 0b11111111; //Ustawia stan wysoki na wyprowdzeniach od PD0 do PD7
+*/
+
+/*III SPOSOB
+DDRD |= (1<<PD0)|(1<<PD1)|(1<<PD2)|(1<<PD3)|(1<<PD4)|(1<<PD5)|(1<<PD6)|(1<<PD7);  //Ustawia wyprowadzenia od PD0 do PD7 do pracy jako wyjscie
+PORTD |= (1<<PD0) |(1<<PD1)|(1<<PD2)|(1<<PD3)|(1<<PD4)|(1<<PD5)|(1<<PD6)|(1<<PD7);  //Ustawia stan wysoki na wyprowdzeniach od  PD0 do PD7
+*/
+
+
+
 
 
 	return 0;
