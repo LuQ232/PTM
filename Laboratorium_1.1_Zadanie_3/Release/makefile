@@ -30,56 +30,56 @@ endif
 
 # Add inputs and outputs from these tool invocations to the build variables 
 LSS += \
-Laboratorium_1.1_Zadanie_1.lss \
+Laboratorium_1.1_Zadanie_3.lss \
 
 FLASH_IMAGE += \
-Laboratorium_1.1_Zadanie_1.hex \
+Laboratorium_1.1_Zadanie_3.hex \
 
 EEPROM_IMAGE += \
-Laboratorium_1.1_Zadanie_1.eep \
+Laboratorium_1.1_Zadanie_3.eep \
 
 SIZEDUMMY += \
 sizedummy \
 
 
 # All Target
-all: Laboratorium_1.1_Zadanie_1.elf secondary-outputs
+all: Laboratorium_1.1_Zadanie_3.elf secondary-outputs
 
 # Tool invocations
-Laboratorium_1.1_Zadanie_1.elf: $(OBJS) $(USER_OBJS)
+Laboratorium_1.1_Zadanie_3.elf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: AVR C Linker'
-	avr-gcc -Wl,-Map,Laboratorium_1.1_Zadanie_1.map -mmcu=atmega32 -o "Laboratorium_1.1_Zadanie_1.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	avr-gcc -Wl,-Map,Laboratorium_1.1_Zadanie_3.map -mmcu=atmega32 -o "Laboratorium_1.1_Zadanie_3.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-Laboratorium_1.1_Zadanie_1.lss: Laboratorium_1.1_Zadanie_1.elf
+Laboratorium_1.1_Zadanie_3.lss: Laboratorium_1.1_Zadanie_3.elf
 	@echo 'Invoking: AVR Create Extended Listing'
-	-avr-objdump -h -S Laboratorium_1.1_Zadanie_1.elf  >"Laboratorium_1.1_Zadanie_1.lss"
+	-avr-objdump -h -S Laboratorium_1.1_Zadanie_3.elf  >"Laboratorium_1.1_Zadanie_3.lss"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-Laboratorium_1.1_Zadanie_1.hex: Laboratorium_1.1_Zadanie_1.elf
+Laboratorium_1.1_Zadanie_3.hex: Laboratorium_1.1_Zadanie_3.elf
 	@echo 'Create Flash image (ihex format)'
-	-avr-objcopy -R .eeprom -R .fuse -R .lock -R .signature -O ihex Laboratorium_1.1_Zadanie_1.elf  "Laboratorium_1.1_Zadanie_1.hex"
+	-avr-objcopy -R .eeprom -R .fuse -R .lock -R .signature -O ihex Laboratorium_1.1_Zadanie_3.elf  "Laboratorium_1.1_Zadanie_3.hex"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-Laboratorium_1.1_Zadanie_1.eep: Laboratorium_1.1_Zadanie_1.elf
+Laboratorium_1.1_Zadanie_3.eep: Laboratorium_1.1_Zadanie_3.elf
 	@echo 'Create eeprom image (ihex format)'
-	-avr-objcopy -j .eeprom --no-change-warnings --change-section-lma .eeprom=0 -O ihex Laboratorium_1.1_Zadanie_1.elf  "Laboratorium_1.1_Zadanie_1.eep"
+	-avr-objcopy -j .eeprom --no-change-warnings --change-section-lma .eeprom=0 -O ihex Laboratorium_1.1_Zadanie_3.elf  "Laboratorium_1.1_Zadanie_3.eep"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-sizedummy: Laboratorium_1.1_Zadanie_1.elf
+sizedummy: Laboratorium_1.1_Zadanie_3.elf
 	@echo 'Invoking: Print Size'
-	-avr-size --format=avr --mcu=atmega32 Laboratorium_1.1_Zadanie_1.elf
+	-avr-size --format=avr --mcu=atmega32 Laboratorium_1.1_Zadanie_3.elf
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(FLASH_IMAGE)$(ELFS)$(OBJS)$(ASM_DEPS)$(EEPROM_IMAGE)$(S_DEPS)$(SIZEDUMMY)$(S_UPPER_DEPS)$(LSS)$(C_DEPS) Laboratorium_1.1_Zadanie_1.elf
+	-$(RM) $(FLASH_IMAGE)$(ELFS)$(OBJS)$(ASM_DEPS)$(EEPROM_IMAGE)$(S_DEPS)$(SIZEDUMMY)$(S_UPPER_DEPS)$(LSS)$(C_DEPS) Laboratorium_1.1_Zadanie_3.elf
 	-@echo ' '
 
 secondary-outputs: $(LSS) $(FLASH_IMAGE) $(EEPROM_IMAGE) $(SIZEDUMMY)
