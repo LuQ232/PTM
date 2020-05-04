@@ -18,5 +18,9 @@
 #define cbi(reg,bit)		reg &= ~(_BV(bit))
 #endif
 
+#ifndef tbi
+#define tbi(reg,bit)		reg ^= (_BV(bit))
+#endif
+
 
 #endif //SET_H
