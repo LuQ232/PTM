@@ -52,7 +52,7 @@ volatile uint16_t liczba7Seg;
 volatile char znaki[4];
 
 char cyfra[10] = { 0b1111110, 0b0110000, 0b1101101, 0b1111001,0b0110011,
-		0b1011011,0b0011111, 0b1110000, 0b1111111,0b1110011};
+		0b1011011,0b1011111, 0b1110000, 0b1111111,0b1111011};
 
 //Inicjalizacja Timer1 do wywolywania przerwania z czêstotliwoœci¹ 2Hz
 void TimerInit() {
