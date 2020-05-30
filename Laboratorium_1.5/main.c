@@ -51,8 +51,14 @@
 char cyfra[10] = { 0b1111110, 0b0110000, 0b1101101, 0b1111001,0b0110011,
 		0b1011011,0b1011111, 0b1110000, 0b1111111,0b1111011};
 
+volatile int digit1 = 0; // zmienna pomocna do wyswietlania czasu na LCD
+volatile int digit2 = 0; // zmienna pomocna do wyswietlania czasu na LCD
+volatile int digit3 = 0; // zmienna pomocna do wyswietlania czasu na LCD
+volatile int digit4 = 0; // zmienna pomocna do wyswietlania czasu na LCD
 volatile int number_counter = 0; // licznik potrzebny do podprogramu 2.Liczby
 
+volatile int stopwatch_counter = 0;
+volatile int watch_counter = 0;
 volatile int menu_counter = 1; // zmienna przechowujaca aktualny numer wybrany z menu
 //////////////////////////////////////////
 // aktualny stan programu
@@ -62,7 +68,10 @@ volatile int menu_counter = 1; // zmienna przechowujaca aktualny numer wybrany z
 // 6- koniec programu
 volatile int state = 0;
 //////////////////////////////////////////
+
 volatile int last_state = 0; // zmienna pomocnicza - potrzebne do odswiezania menu
+
+
 // Funkcja zwracajaca numer nacisnietego przycisku
 int which_button_is_pressed()
 {
@@ -135,7 +144,7 @@ void show_menu ()
 					LCD_WriteText("1. Info");
 				break;
 				case 2:
-					LCD_WriteText("2. Liczy");
+					LCD_WriteText("2. Liczby");
 				break;
 				case 3:
 					LCD_WriteText("3. Stoper");
@@ -222,6 +231,153 @@ void numbers()
 
 }
 
+
+//Inicjalizacja Timer1 do wywolywania przerwan
+void TimerInit() {
+	//Wybranie trybu pracy CTC z TOP OCR1A
+	sbi(TCCR1B,WGM12);
+	//Wybranie dzielnika czestotliwosci
+	sbi(TCCR1B,CS12);  // dzielnik 256
+	//Zapisanie do OCR1A wartosci odpowiadajacej 0,1s
+	OCR1A = 3125;
+	//Uruchomienie przerwania OCIE1A
+	sbi(TIMSK,OCIE1A);
+}
+
+
+
+
+
+//Funkcja realizujaca 3 podprogram - stoper
+void stopwatch()
+{
+	LCD_Clear();
+	LCD_WriteText("00:00 PRESS OK");
+	LCD_GoTo(0,1);
+	LCD_WriteText("TO START");
+	int stopwatch_first_press = 0;
+	while(1)
+	{
+		_delay_ms(50);
+		if(which_button_is_pressed() == 4 ) // Jezeli nacisnieto OK
+		{
+
+			if(stopwatch_first_press == 0) // jezeli to pierwsze nacisniecie przycisku
+			{
+				TimerInit(); // wlaczenie timera
+				stopwatch_first_press = 1; // zmiana statusu
+			}else if(stopwatch_first_press == 1)  // jezeli to nie pierwsze nacisniecie przycisku( timer pracuje)
+			{
+				cbi(TIMSK,OCIE1A); // zatrzymanie timera
+				stopwatch_counter = 0; // wyzerowanie licznika
+				stopwatch_first_press = 0; // zmiana statusu
+			}
+		}else if(which_button_is_pressed() == 3)
+		{
+			stopwatch_first_press = 0; // zmiana statusu
+			stopwatch_counter = 0; // wyzerowanie licznika
+			cbi(TIMSK,OCIE1A); // zatrzymanie timera
+			state = 0;
+			last_state = -1;
+			break;
+		}
+
+	}
+
+}
+
+
+
+//Funkcja realizujaca 4 podprogram - zegar
+void watch()
+{
+	LCD_Clear();
+	LCD_WriteText("00:00 PRESS OK");
+	LCD_GoTo(0,1);
+	LCD_WriteText("TO START");
+	while(1)
+	{
+		_delay_ms(50);
+		if(which_button_is_pressed() == 4 ) // Jezeli nacisnieto OK
+		{
+				TimerInit(); // wlaczenie timera
+				stopwatch_counter = 0; // wyzerowanie licznika
+		}else if(which_button_is_pressed() == 3)
+		{
+			stopwatch_counter = 0; // wyzerowanie licznika
+			cbi(TIMSK,OCIE1A); // zatrzymanie timera
+			PORTC =0b0000000; // Zgaszenie wysw. 7 segm
+			cbi(PORTA,PA4);
+			state = 0;
+			last_state = -1;
+			break;
+		}
+
+	}
+
+}
+
+//Komparator Analogowy
+int compare(uint16_t value)
+{
+	if(value>=250)	// Jezeli wartosc wieksza niz 2,5 V
+	{
+		return 1;
+	}else
+	{
+		return 0;
+	}
+}
+
+//Funkcja zwracajaca wartosc odczytana z przetwornika A/D
+uint16_t ADC_10bit()
+{
+	sbi(ADCSRA,ADSC); //uruchomienie pojedynczego pomiaru – ustawienie bitu
+	cbi(ADCSRA,ADSC); //oczekiwanie na zakoñczenie pomiaru – oczekiwanie na wyzerowanie bitu
+	return ADC;
+}
+
+//Funkcja zamieniajaca wartosc odczytana z przetwornika A/D na liczbe volt( 4,23V -> 423)
+uint16_t ADC_to_volt(uint16_t adc_value)
+{
+	return adc_value*0.4888;   // 500/1023 == 0.4888
+}
+
+//Funkcja wyswietlajaca dane miernika na LCD
+void display_voltmeter_data()
+{
+	LCD_GoTo(0, 0);		//Ustawienie kursora na poczatku 1 linii LCD
+	LCD_WriteText("ADC = ");
+	LCD_ShowNumber(ADC_10bit());	//Wyswietlenie odczytanej liczby voltow
+	LCD_GoTo(0, 1);		//Ustawienie kursora na poczatku 2 linii LCD
+
+	digit1 = ADC_to_volt(ADC_10bit())/100;
+	digit2 = (ADC_to_volt(ADC_10bit()) - digit1*100)/10;
+	digit3 = (ADC_to_volt(ADC_10bit()) - digit1*100)%10;
+	LCD_ShowNumber(digit1);
+	LCD_WriteText(",");
+	LCD_ShowNumber(digit2);
+	LCD_ShowNumber(digit3);
+	LCD_WriteText("V");
+}
+//Funkcja realizujaca 5 podprogram - miernik
+void voltmeter()
+{
+
+		LCD_Clear();
+		while(1) {
+				display_voltmeter_data();
+				if(which_button_is_pressed() == 3)
+				{
+					LCD_Clear();	// Czyszczenie ekranu
+					state = 0;
+					last_state = -1;
+					break;
+				}
+				_delay_ms(50);	// delay
+				LCD_Clear();	// Czyszczenie ekranu
+			}
+}
 //Inicjalizacja portow do obs³ugi wyswietlacza 7 segmentowego
 void seg7Init() {
 	//Inicjalizacja kolumn
@@ -241,6 +397,8 @@ void Led_init()
 	cbi(PORTA,PA3);
 	cbi(PORTA,PA4);
 }
+
+
 //Funkcja Inicjalizujaca przetwornik A/D
 void ADC_init()
 {
@@ -257,48 +415,21 @@ void ADC_init()
 	cbi(ADMUX,MUX4);
 }
 
-//Funkcja zwracajaca wartosc odczytana z przetwornika A/D
-uint16_t ADC_10bit()
-{
-	sbi(ADCSRA,ADSC); //uruchomienie pojedynczego pomiaru – ustawienie bitu
-	cbi(ADCSRA,ADSC); //oczekiwanie na zakoñczenie pomiaru – oczekiwanie na wyzerowanie bitu
-	return ADC;
-}
 
-//Funkcja zamieniajaca wartosc odczytana z przetwornika A/D na liczbe volt( 4,23V -> 423)
-uint16_t ADC_to_volt(uint16_t adc_value)
-{
-	return adc_value*0.4888;   // 500/1023 == 0.4888
-}
-
-//Komparator Analogowy
-int compare(uint16_t value)
-{
-	if(value>=250)	// Jezeli wartosc wieksza niz 2,5 V
-	{
-		return 1;
-	}else
-	{
-		return 0;
-	}
-}
 
 
 int main() {
 
 
-	Led_init();
+	Led_init(); // Inicjalizacja 3 LEDow
 	seg7Init(); // Inicjalizacja wysw. 7 seg.
 	ADC_init();			//Inicjalizacja przetwornika A/D
 	LCD_Initalize();	//Inicjalizacja ekranu LCD
 	LCD_Home(); 	//Przywraca poczatkowe wspolrzedne wyswietlacza
-
+	sei();		//Wlaczenie przerwan
 	while(1) {
 
-			if(which_button_is_pressed() == 3) // JEZELI WCISNIETO 'X'
-				{
-					state = 6; // KONIEC PROGRAMU
-				}
+
 
 			if(state == 0)  // MENU
 			{
@@ -323,21 +454,84 @@ int main() {
 				numbers();
 			}else if (state == 3)// STOPER
 			{
-
+				stopwatch();
 			}else if (state == 4)// ZEGAR
 			{
-
+				watch();
 			}else if (state == 5)// MIENRIK
 			{
-
-			}else if (state == 6)// KONIEC PROGRAMU
-			{
-				end_of_program();
-				return 0; // KONIEC PROGRAMU
+				voltmeter();
 			}
 
 
 			update_menu_counter(); // zaaktualizowanie zmiennej menu_counter
 			_delay_ms(50);
 		}
+}
+
+
+
+//Funkcja uruchamiana z przerwaniem po przepelnieniu licznika w timer1
+ISR(TIMER1_COMPA_vect) {
+	LCD_Clear(); // Czyszczenie
+
+//Odpowiednie przeliczenie cyfr/
+	if(state == 3 ) // STOPER
+	{
+			digit1 = 0;
+			digit2 = stopwatch_counter;
+			digit3 = digit2/10;
+			digit2 -= digit3*10;
+
+			digit4 = digit3/10;
+			digit3-= digit4*10;
+	}
+
+	if(state == 4) // ZEGAR
+	{
+		digit1 = stopwatch_counter/10;
+
+		digit2 = digit1 / 10;
+		digit1 -= digit2*10;
+
+		digit3 = digit2/6;
+		digit2 -= digit3*6;
+
+		digit4 = digit3 / 10;
+		digit3 -= digit4*10;
+
+
+	}
+
+///////////////////////////////
+
+/////////Wyswietlanie czasu ///
+	LCD_ShowNumber(digit4);
+	LCD_ShowNumber(digit3);
+	LCD_WriteText(":");
+	LCD_ShowNumber(digit2);
+	LCD_ShowNumber(digit1);
+///////////////////////////////
+
+	if(state == 4)
+	{
+		seg7ShowCyfra(digit1);
+		if(stopwatch_counter%10 == 0)
+			{
+				sbi(PORTA,PA4);
+			}
+		if(stopwatch_counter%10   == 2)
+		{
+			cbi(PORTA,PA4);
+		}
+
+	}
+
+
+
+
+
+	stopwatch_counter+=1; // inkrementacja licznika timera
+
+
 }
