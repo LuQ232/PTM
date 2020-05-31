@@ -40,14 +40,6 @@
  #define 	loop_until_bit_is_set(sfr, bit)   do { } while (bit_is_clear(sfr, bit))
  #define 	loop_until_bit_is_clear(sfr, bit)   do { } while (bit_is_set(sfr, bit))
 
-
-// MIN/MAX/ABS macros
-#define MIN(a,b)			((a<b)?(a):(b))
-#define MAX(a,b)			((a>b)?(a):(b))
-#define ABS(x)				((x>0)?(x):(-x))
-
-
-
 char cyfra[10] = { 0b1111110, 0b0110000, 0b1101101, 0b1111001,0b0110011,
 		0b1011011,0b1011111, 0b1110000, 0b1111111,0b1111011};
 
@@ -57,9 +49,9 @@ volatile int digit3 = 0; // zmienna pomocna do wyswietlania czasu na LCD
 volatile int digit4 = 0; // zmienna pomocna do wyswietlania czasu na LCD
 volatile int number_counter = 0; // licznik potrzebny do podprogramu 2.Liczby
 
-volatile int stopwatch_counter = 0;
-volatile int watch_counter = 0;
+volatile int stopwatch_counter = 0; // licznik uzywany do timera1
 volatile int menu_counter = 1; // zmienna przechowujaca aktualny numer wybrany z menu
+
 //////////////////////////////////////////
 // aktualny stan programu
 // 0- menu , 1 - info
@@ -69,10 +61,11 @@ volatile int menu_counter = 1; // zmienna przechowujaca aktualny numer wybrany z
 volatile int state = 0;
 //////////////////////////////////////////
 
-volatile int last_state = 0; // zmienna pomocnicza - potrzebne do odswiezania menu
+volatile int last_state = 0; //zmienna potrzebna do odswiezania menu
 
 
 // Funkcja zwracajaca numer nacisnietego przycisku
+// Przyciski dzialaja jako Pull Up
 int which_button_is_pressed()
 {
 	if(bit_is_clear(PIND,PD1))
@@ -88,10 +81,10 @@ int which_button_is_pressed()
 	{
 		return 4; // PRZYCISK OK
 	}
-	return 0; // BLAD!
+	return 0; // Zaden przycisk nie jest cisniety
 }
 
-//Funkcja inkrementujaca // dekrementujaca menu_counter
+//Funkcja Do poruszania siê po menu g³ównym
 void update_menu_counter()
 {
 	switch(which_button_is_pressed()) // jezeli nacisnieto przycisk
@@ -112,7 +105,8 @@ void update_menu_counter()
 				break;
 				}
 }
-// Funkcja wyswietlajaca info
+
+//Funkcja realizujaca 1 podprogram - info
 void show_info()
 {
 	LCD_Clear();
@@ -126,33 +120,24 @@ void show_info()
 	LCD_Clear();
 }
 
-// Funkcja  informujaca uzytkownika o koncu programu
-void end_of_program()
-{
-	LCD_Clear();
-	LCD_WriteText("KONIEC PROGRAMU");
-	_delay_ms(1000);
-	LCD_Clear();
-}
-
 // Funkcja wyswietlajaca dana opcje menu na  LCD
 void show_menu ()
 {
 	switch(menu_counter)
 		{
-				case 1:
+				case 1: // 1 podprogram
 					LCD_WriteText("1. Info");
 				break;
-				case 2:
+				case 2:// 2 podprogram
 					LCD_WriteText("2. Liczby");
 				break;
-				case 3:
+				case 3:// 3 podprogram
 					LCD_WriteText("3. Stoper");
 				break;
-				case 4:
+				case 4:// 4 podprogram
 					LCD_WriteText("4. Zegar");
 				break;
-				case 5:
+				case 5:// 5 podprogram
 					LCD_WriteText("5. Miernik");
 				break;
 		}
@@ -160,66 +145,65 @@ void show_menu ()
 
 //Wyswietla na wyswietlaczu 7 segmentowym cyfre z argumentu
 void seg7ShowCyfra(uint8_t cyfraDoWyswietlenia) {
-	PORTC = cyfra[cyfraDoWyswietlenia]; //odpowiednie ustawienie calego portu Cs
+	PORTC = cyfra[cyfraDoWyswietlenia]; //odpowiednie ustawienie calego portu C
 }
 
-//Funkcja realizujaca 2 podprogram - liczy
+//Funkcja realizujaca 2 podprogram - liczby
 void numbers()
 {
-	int tmp = 1;
+	int tmp = 1; // zmienna pomocnicza
 	while(tmp)
 	{
-		LCD_Clear();
-		LCD_ShowNumber(number_counter);
-		if(number_counter%2  == 0) //Jezeli parzysta
+		LCD_Clear(); // Czyszczenie ekranu
+		LCD_ShowNumber(number_counter); // wyswietlenie liczby na LCD
+		if(number_counter%2  == 0) //Jezeli liczba jest parzysta
 		{
-			cbi(PORTA,PA3);
-			sbi(PORTA,PA2);
-		}
-		if(number_counter%2 == 1) // Jezeli nieparzysta
+			cbi(PORTA,PA3);//Zgaszenie diody LED2
+			sbi(PORTA,PA2);// Zapalenie diody  LED1
+		}else if(number_counter%2 == 1) // Jezeli liczba jest nieparzysta
 		{
-			cbi(PORTA,PA2);
-			sbi(PORTA,PA3);
+			cbi(PORTA,PA2);//Zgaszenie diody LED1
+			sbi(PORTA,PA3);//Zapalenie diody  LED2
 		}
 		if(number_counter == 2 ||number_counter ==3 ||number_counter ==5 || number_counter ==7||
 		number_counter == 11 ||number_counter ==13 ||number_counter ==17 || number_counter ==19||
 		number_counter == 23 ||number_counter ==29 ||number_counter ==31 || number_counter ==37||
-		number_counter == 41 ||number_counter ==43 ||number_counter ==47)
+		number_counter == 41 ||number_counter ==43 ||number_counter ==47) // Jezeli jest liczb¹ pierwsz¹
 		{
-			sbi(PORTA, PA4);
-		}else
+			sbi(PORTA, PA4); // Zapalenie Led 3
+		}else // Jezeli nie jest liczba pierwsza
 		{
-			cbi(PORTA, PA4);
+			cbi(PORTA, PA4);// Zgaszenie Led 3
 		}
 
-		if(number_counter<10)
+		if(number_counter<10) // Jezeli liczba jest mniejsza niz 10
 		{
-			seg7ShowCyfra(number_counter);
-		}else
+			seg7ShowCyfra(number_counter); // wyswietlenie na wysw. 7 segm.
+		}else // Jezeli liczba wieksza rowna 10
 		{
-			PORTC =0b0000001;
+			PORTC =0b0000001; // Wyswietlenie "-" na wysw. 7 segm.
 		}
 		_delay_ms(50);
 
 		switch(which_button_is_pressed()) // jezeli nacisnieto przycisk
 						{
 						case 1:	// przycisk UP
-							if(number_counter<50) // zabezpieczenie przed przekroczeniem menu
+							if(number_counter<50) // zabezpieczenie przed zakresu (0,50)
 							{
-								number_counter++; // inkrementacja
+								number_counter++; // inkrementacja liczby
 							}
 
 						break;
 						case 2:// przycisk DOWN
-							if(number_counter>0)// zabezpieczenie przed przekroczeniem menu
+							if(number_counter>0) // zabezpieczenie przed zakresu (0,50)
 							{
-								number_counter--; // dekrementacja
+								number_counter--; // dekrementacja liczby
 							}
 						break;
-						case 3:
-							tmp = 0;
-							state = 0;
-							last_state = -1;
+						case 3: // Przycisk 'X'
+							tmp = 0; // aby zakonczyc petle funkcji
+							state = 0; // zmiana stanu programu
+							last_state = -1; // zmiana pomocniczej zmiennej do wyswietlania menu
 							PORTC =0b0000000; // Zgaszenie wysw. 7 segm
 							cbi(PORTA,PA2);// Zgaszenie led1
 							cbi(PORTA,PA3);// Zgaszenie led2
@@ -227,7 +211,7 @@ void numbers()
 						break;
 						}
 	}
-	LCD_Clear();
+	LCD_Clear(); // Czyszczenie LCD
 
 }
 
@@ -251,10 +235,13 @@ void TimerInit() {
 //Funkcja realizujaca 3 podprogram - stoper
 void stopwatch()
 {
-	LCD_Clear();
+	LCD_Clear(); // Czyszczenie ekranu
+	//EKRAN POWITALNY 3 PODPROGRAMU///
 	LCD_WriteText("00:00 PRESS OK");
 	LCD_GoTo(0,1);
 	LCD_WriteText("TO START");
+	//////////////////////////////////
+	// zmienna pomocnicza przetrzymujaca informacje o naciskanym przycisku 'OK'
 	int stopwatch_first_press = 0;
 	while(1)
 	{
@@ -262,24 +249,25 @@ void stopwatch()
 		if(which_button_is_pressed() == 4 ) // Jezeli nacisnieto OK
 		{
 
-			if(stopwatch_first_press == 0) // jezeli to pierwsze nacisniecie przycisku
+			if(stopwatch_first_press == 0) // jezeli to pierwsze nacisniecie przycisku OK
 			{
-				TimerInit(); // wlaczenie timera
-				stopwatch_first_press = 1; // zmiana statusu
-			}else if(stopwatch_first_press == 1)  // jezeli to nie pierwsze nacisniecie przycisku( timer pracuje)
+				TimerInit(); //wlaczenie timera
+				stopwatch_first_press = 1; //zmiana statusu
+			}else if(stopwatch_first_press == 1)//jezeli to nie pierwsze nacisniecie przycisku( timer pracuje)
 			{
 				cbi(TIMSK,OCIE1A); // zatrzymanie timera
-				stopwatch_counter = 0; // wyzerowanie licznika
-				stopwatch_first_press = 0; // zmiana statusu
+				stopwatch_counter = 0; // wyzerowanie licznika timera
+				stopwatch_first_press = 0; // zmiana statusu przycisku 'OK'
 			}
-		}else if(which_button_is_pressed() == 3)
+		}else if(which_button_is_pressed() == 3) // Jezeli nacisnieto 'X'
 		{
 			stopwatch_first_press = 0; // zmiana statusu
 			stopwatch_counter = 0; // wyzerowanie licznika
 			cbi(TIMSK,OCIE1A); // zatrzymanie timera
-			state = 0;
-			last_state = -1;
-			break;
+			cbi(PORTA, PA2);	// Zgaszenie Led1
+			state = 0;	// Zmiana statusu programu
+			last_state = -1; // zmiana pomocniczej zmiennej do wyswietlania menu
+			break; // Wyjscie z petli
 		}
 
 	}
@@ -291,10 +279,12 @@ void stopwatch()
 //Funkcja realizujaca 4 podprogram - zegar
 void watch()
 {
-	LCD_Clear();
+	LCD_Clear(); // Czyszczenie ekranu
+	//EKRAN POWITALNY 3 PODPROGRAMU///
 	LCD_WriteText("00:00 PRESS OK");
 	LCD_GoTo(0,1);
 	LCD_WriteText("TO START");
+	//////////////////////////////////
 	while(1)
 	{
 		_delay_ms(50);
@@ -302,14 +292,14 @@ void watch()
 		{
 				TimerInit(); // wlaczenie timera
 				stopwatch_counter = 0; // wyzerowanie licznika
-		}else if(which_button_is_pressed() == 3)
+		}else if(which_button_is_pressed() == 3) // Jezeli nacisnieto 'X'
 		{
 			stopwatch_counter = 0; // wyzerowanie licznika
 			cbi(TIMSK,OCIE1A); // zatrzymanie timera
 			PORTC =0b0000000; // Zgaszenie wysw. 7 segm
-			cbi(PORTA,PA4);
-			state = 0;
-			last_state = -1;
+			cbi(PORTA,PA4); // Zgaszenie Led 3
+			state = 0;// Zmiana statusu programu
+			last_state = -1;// zmiana pomocniczej zmiennej do wyswietlania menu
 			break;
 		}
 
@@ -317,17 +307,7 @@ void watch()
 
 }
 
-//Komparator Analogowy
-int compare(uint16_t value)
-{
-	if(value>=250)	// Jezeli wartosc wieksza niz 2,5 V
-	{
-		return 1;
-	}else
-	{
-		return 0;
-	}
-}
+
 
 //Funkcja zwracajaca wartosc odczytana z przetwornika A/D
 uint16_t ADC_10bit()
@@ -350,29 +330,32 @@ void display_voltmeter_data()
 	LCD_WriteText("ADC = ");
 	LCD_ShowNumber(ADC_10bit());	//Wyswietlenie odczytanej liczby voltow
 	LCD_GoTo(0, 1);		//Ustawienie kursora na poczatku 2 linii LCD
-
+	////PRZELICZENIE LICZBY NA POJEDYNCZE CYFRY/////////
 	digit1 = ADC_to_volt(ADC_10bit())/100;
 	digit2 = (ADC_to_volt(ADC_10bit()) - digit1*100)/10;
 	digit3 = (ADC_to_volt(ADC_10bit()) - digit1*100)%10;
+	////////////////////////////////////////////////////
+	///WYSWIETLENIE NAPIECIA//////////////
 	LCD_ShowNumber(digit1);
 	LCD_WriteText(",");
 	LCD_ShowNumber(digit2);
 	LCD_ShowNumber(digit3);
 	LCD_WriteText("V");
+	//////////////////////////////////////
 }
+
 //Funkcja realizujaca 5 podprogram - miernik
 void voltmeter()
 {
-
-		LCD_Clear();
+		LCD_Clear(); // Czyszczenie ekranu
 		while(1) {
-				display_voltmeter_data();
-				if(which_button_is_pressed() == 3)
+				display_voltmeter_data(); // Wyswietlenie zmierzonych danych na LCD
+				if(which_button_is_pressed() == 3)// Jezeli nacisnieto 'X'
 				{
 					LCD_Clear();	// Czyszczenie ekranu
-					state = 0;
-					last_state = -1;
-					break;
+					state = 0;// Zmiana statusu programu
+					last_state = -1;// zmiana pomocniczej zmiennej do wyswietlania menu
+					break; // Przerwanie petli
 				}
 				_delay_ms(50);	// delay
 				LCD_Clear();	// Czyszczenie ekranu
@@ -383,19 +366,19 @@ void seg7Init() {
 	//Inicjalizacja kolumn
 	DDRC = 0b11111111; //Ustawia wyprowadzenia od PC0 do PC7 do pracy jako wyjscie
 	//Inicjalizacja segmentu
-	PORTC= 0b0000000;
+	PORTC= 0b0000000; // Zgaszenie Wysw. 7 segm.
 }
 
 
-
+//Inicjalizacja LED1,LED2,LED3
 void Led_init()
 {
-	sbi(DDRA,PA2);
-	sbi(DDRA,PA3);
-	sbi(DDRA,PA4);
-	cbi(PORTA,PA2);
-	cbi(PORTA,PA3);
-	cbi(PORTA,PA4);
+	sbi(DDRA,PA2); //Inicjalizacja LED1
+	sbi(DDRA,PA3); //Inicjalizacja LED2
+	sbi(DDRA,PA4); //Inicjalizacja LED3
+	cbi(PORTA,PA2); //Zgaszenie LED1
+	cbi(PORTA,PA3);//Zgaszenie LED2
+	cbi(PORTA,PA4);//Zgaszenie LED3
 }
 
 
@@ -419,54 +402,45 @@ void ADC_init()
 
 
 int main() {
-
-
 	Led_init(); // Inicjalizacja 3 LEDow
 	seg7Init(); // Inicjalizacja wysw. 7 seg.
 	ADC_init();			//Inicjalizacja przetwornika A/D
 	LCD_Initalize();	//Inicjalizacja ekranu LCD
 	LCD_Home(); 	//Przywraca poczatkowe wspolrzedne wyswietlacza
 	sei();		//Wlaczenie przerwan
-	while(1) {
-
-
-
-			if(state == 0)  // MENU
+	while(1)
+	{
+		if(state == 0)  // MENU
+		{
+			if(last_state != menu_counter) // JEELI TZREBA OODSIEZYC MENU (JAKAS ZMIANA)
 			{
-
-				// TUTAJ MOZE BYC SPRAWDZANIE CZY COS SIE ZMIENILO WTEDY WYSWIETALM
-				if(last_state != menu_counter) // JEELI TZREBA OODSIEZYC MENU (JAKAS ZMIANA)
-				{
-					LCD_Clear();	// Czyszczenie LCD
-					show_menu();	// wyswietlenie opcji menu na LCD
-					last_state = menu_counter; // ustawienie zmiennej last_state
-				}
-
-				if(which_button_is_pressed() == 4) // JEZELI WCISNIETO 'OK'
-				{
-					state = menu_counter;
-				}
-			}else if(state == 1) // INFO
-			{
-				show_info();
-			}else if(state == 2)// LICZBY
-			{
-				numbers();
-			}else if (state == 3)// STOPER
-			{
-				stopwatch();
-			}else if (state == 4)// ZEGAR
-			{
-				watch();
-			}else if (state == 5)// MIENRIK
-			{
-				voltmeter();
+				LCD_Clear();	// Czyszczenie LCD
+				show_menu();	// wyswietlenie opcji menu na LCD
+				last_state = menu_counter; // ustawienie zmiennej last_state
 			}
-
-
-			update_menu_counter(); // zaaktualizowanie zmiennej menu_counter
-			_delay_ms(50);
+			if(which_button_is_pressed() == 4) // JEZELI WCISNIETO 'OK'
+			{
+				state = menu_counter;
+			}
+		}else if(state == 1) // INFO
+		{
+			show_info(); // Funkcja realizujaca 1 podprogram
+		}else if(state == 2)// LICZBY
+		{
+			numbers();// Funkcja realizujaca 2 podprogram
+		}else if (state == 3)// STOPER
+		{
+			stopwatch();// Funkcja realizujaca 3 podprogram
+		}else if (state == 4)// ZEGAR
+		{
+			watch();// Funkcja realizujaca 4 podprogram
+		}else if (state == 5)// MIENRIK
+		{
+			voltmeter();// Funkcja realizujaca 5 podprogram
 		}
+		update_menu_counter(); // zaaktualizowanie zmiennej menu_counter
+		_delay_ms(50);
+	}
 }
 
 
@@ -475,20 +449,30 @@ int main() {
 ISR(TIMER1_COMPA_vect) {
 	LCD_Clear(); // Czyszczenie
 
-//Odpowiednie przeliczenie cyfr/
+
 	if(state == 3 ) // STOPER
 	{
-			digit1 = 0;
-			digit2 = stopwatch_counter;
-			digit3 = digit2/10;
-			digit2 -= digit3*10;
+		//ODPOWIEDNIE PRZELICZENIE CZASU NA CYFRY/////
+		digit1 = 0;
+		digit2 = stopwatch_counter;
+		digit3 = digit2/10;
+		digit2 -= digit3*10;
 
-			digit4 = digit3/10;
-			digit3-= digit4*10;
+		digit4 = digit3/10;
+		digit3-= digit4*10;
+		//////////////////////////////////////////////
+		//////ZAPALENIE DIODY LED1 NA SEKUNDE/////////
+		if(stopwatch_counter%10 == 0)
+			{
+				tbi(PORTA,PA2); // zmiana stanu na porcie PA2 (LED1)
+			}
+		//////////////////////////////////////////////
 	}
 
 	if(state == 4) // ZEGAR
 	{
+
+		//ODPOWIEDNIE PRZELICZENIE CZASU NA CYFRY/////
 		digit1 = stopwatch_counter/10;
 
 		digit2 = digit1 / 10;
@@ -499,39 +483,30 @@ ISR(TIMER1_COMPA_vect) {
 
 		digit4 = digit3 / 10;
 		digit3 -= digit4*10;
+		//////////////////////////////////////////////
 
+		seg7ShowCyfra(digit1); // Wyswietlenie sekund na wysw. 7 segm.
+		////ZAPALENIE LED 3 NA 200ms po ka¿dej sekundzie////////////////
+		if(stopwatch_counter%10 == 0)
+		{
+			sbi(PORTA,PA4);
+		}
+		if(stopwatch_counter%10   == 2)
+		{
+			cbi(PORTA,PA4);
+		}
+		/////////////////////////////////////////////////////////////////
 
 	}
 
 ///////////////////////////////
 
-/////////Wyswietlanie czasu ///
+/////////Wyswietlanie czasu na LCD ///
 	LCD_ShowNumber(digit4);
 	LCD_ShowNumber(digit3);
 	LCD_WriteText(":");
 	LCD_ShowNumber(digit2);
 	LCD_ShowNumber(digit1);
-///////////////////////////////
-
-	if(state == 4)
-	{
-		seg7ShowCyfra(digit1);
-		if(stopwatch_counter%10 == 0)
-			{
-				sbi(PORTA,PA4);
-			}
-		if(stopwatch_counter%10   == 2)
-		{
-			cbi(PORTA,PA4);
-		}
-
-	}
-
-
-
-
-
+//////////////////////////////////////
 	stopwatch_counter+=1; // inkrementacja licznika timera
-
-
 }
